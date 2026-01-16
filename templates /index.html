@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flipkart Chatbot</title>
+
+  <!-- Bootstrap + Icons -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+
+<body>
+  <div class="app-shell">
+    <div class="chat-card">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="brand">
+          <div class="brand-avatar">
+            <img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" alt="Flipkart"/>
+            <span class="status-dot" title="Online"></span>
+          </div>
+          <div class="brand-meta">
+            <div class="brand-title">Flipkart Chatbot</div>
+            <div class="brand-subtitle">Ask for product suggestions, comparisons, and specs</div>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-outline-light clear-btn" id="clearChat" type="button">
+          <i class="fas fa-trash"></i> Clear
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="chat-body" id="chatBody">
+        <div class="msg-row bot">
+          <div class="bubble bot-bubble">
+            👋 Hi! Tell me what you’re looking for (category + budget + any preference).
+            <div class="bubble-meta">Flipkart Bot</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="chat-footer">
+        <form id="messageArea" class="chat-form">
+          <input
+            type="text"
+            id="text"
+            name="msg"
+            placeholder="Type your message… (e.g., 'gaming headphones under 5k')"
+            autocomplete="off"
+            class="chat-input"
+            required
+          />
+          <button type="submit" class="chat-send" id="sendBtn" aria-label="Send">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+        <div class="footer-hint">
+          Press <kbd>Enter</kbd> to send
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+  <script>
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatBotText(text) {
+      // Convert **bold** to <strong> and new lines to <br>
+      let t = String(text || "");
+      t = escapeHtml(t);
+      t = t.replaceAll(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      t = t.replaceAll(/\n/g, "<br>");
+      return t;
+    }
+
+    function scrollToBottom() {
+      const el = document.getElementById("chatBody");
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function addUserMessage(rawText) {
+      const safe = escapeHtml(rawText);
+      const html = `
+        <div class="msg-row user">
+          <div class="bubble user-bubble">
+            ${safe}
+            <div class="bubble-meta">You</div>
+          </div>
+        </div>
+      `;
+      $("#chatBody").append(html);
+      scrollToBottom();
+    }
+
+    function addTyping() {
+      const html = `
+        <div class="msg-row bot" id="typingRow">
+          <div class="bubble bot-bubble">
+            <span class="typing">
+              <span></span><span></span><span></span>
+            </span>
+            <div class="bubble-meta">Flipkart Bot</div>
+          </div>
+        </div>
+      `;
+      $("#chatBody").append(html);
+      scrollToBottom();
+    }
+
+    function removeTyping() {
+      $("#typingRow").remove();
+    }
+
+    function addBotMessage(text) {
+      const html = `
+        <div class="msg-row bot">
+          <div class="bubble bot-bubble">
+            ${formatBotText(text)}
+            <div class="bubble-meta">Flipkart Bot</div>
+          </div>
+        </div>
+      `;
+      $("#chatBody").append(html);
+      scrollToBottom();
+    }
+
+    $(document).ready(function () {
+      $("#clearChat").on("click", function() {
+        $("#chatBody").html(`
+          <div class="msg-row bot">
+            <div class="bubble bot-bubble">
+              👋 Hi! Tell me what you’re looking for (category + budget + any preference).
+              <div class="bubble-meta">Flipkart Bot</div>
+            </div>
+          </div>
+        `);
+      });
+
+      $("#messageArea").on("submit", function (event) {
+        event.preventDefault();
+
+        const rawText = $("#text").val().trim();
+        if (!rawText) return;
+
+        addUserMessage(rawText);
+        $("#text").val("");
+        $("#text").focus();
+
+        addTyping();
+
+        $.ajax({
+          data: { msg: rawText },
+          type: "POST",
+          url: "/get",
+        })
+        .done(function (data) {
+          removeTyping();
+          addBotMessage(data);
+        })
+        .fail(function () {
+          removeTyping();
+          addBotMessage("⚠️ Server error. Check your Flask terminal logs.");
+        });
+      });
+    });
+  </script>
+</body>
+</html>
