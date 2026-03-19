@@ -7,4 +7,5 @@ flipkart/rag_chain.py
 flipkart_product_recommender.egg-info/PKG-INFO
 flipkart_product_recommender.egg-info/SOURCES.txt
 flipkart_product_recommender.egg-info/dependency_links.txt
+flipkart_product_recommender.egg-info/requires.txt
 flipkart_product_recommender.egg-info/top_level.txt

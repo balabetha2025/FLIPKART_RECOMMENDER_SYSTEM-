@@ -21,7 +21,7 @@ COPY . .
 RUN pip install --no-cache-dir -e .
 
 # Used PORTS
-EXPOSE 5000
+EXPOSE 5001
 
 # Run the app 
 CMD ["python", "app.py"]
