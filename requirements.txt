@@ -1,11 +1,14 @@
 langchain
+langchain-core
 langchain-community
 langchain-astradb
 langchain-huggingface
 langchain-groq
+langchain-text-splitters
 datasets
 pypdf
 python-dotenv
 pandas
 flask
 prometheus-client
+
