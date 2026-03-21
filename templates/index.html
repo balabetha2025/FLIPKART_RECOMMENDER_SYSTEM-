@@ -4,186 +4,534 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Flipkart Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0f1a;
+      --surface: #13172a;
+      --surface2: #1a1f38;
+      --border: rgba(255,255,255,0.07);
+      --accent: #2874f0;
+      --accent-glow: rgba(40,116,240,0.25);
+      --accent2: #f7c600;
+      --bot-bubble: #1c2340;
+      --bot-bubble-border: rgba(40,116,240,0.3);
+      --user-bubble: #2874f0;
+      --text: #e8ecf5;
+      --text-soft: rgba(232,236,245,0.65);
+      --text-dim: rgba(232,236,245,0.38);
+      --online: #22d35e;
+    }
 
-  <!-- Bootstrap + Icons -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <!-- Your CSS -->
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}"/>
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% 5%, rgba(40,116,240,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 95%, rgba(247,198,0,0.07) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* CARD */
+    .chat-card {
+      width: 100%;
+      max-width: 720px;
+      height: 88vh;
+      min-height: 580px;
+      max-height: 860px;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      box-shadow:
+        0 0 0 1px rgba(40,116,240,0.06),
+        0 40px 100px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 13px; }
+
+    .logo-wrap {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #2874f0, #1a5cd4);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(40,116,240,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    .logo-wrap svg { width: 22px; height: 22px; fill: white; }
+
+    .header-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1;
+    }
+
+    .header-text h1 em {
+      font-style: normal;
+      color: var(--accent2);
+    }
+
+    .header-sub {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .online-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--online);
+      box-shadow: 0 0 8px var(--online);
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--online); }
+      50% { opacity: 0.6; box-shadow: 0 0 3px var(--online); }
+    }
+
+    .header-sub p {
+      font-size: 11.5px;
+      color: var(--text-soft);
+      font-weight: 500;
+    }
+
+    .clear-btn {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-dim);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .clear-btn:hover {
+      background: rgba(255,70,70,0.12);
+      border-color: rgba(255,70,70,0.35);
+      color: #ff6b6b;
+      transform: scale(1.05);
+    }
+
+    .clear-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* CHIPS */
+    .chips-bar {
+      display: flex;
+      gap: 7px;
+      padding: 10px 20px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      scrollbar-width: none;
+      background: rgba(255,255,255,0.01);
+    }
+
+    .chips-bar::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 5px 13px;
+      border-radius: 100px;
+      border: 1px solid rgba(40,116,240,0.2);
+      background: rgba(40,116,240,0.06);
+      color: var(--text-soft);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .chip:hover {
+      background: rgba(40,116,240,0.2);
+      border-color: rgba(40,116,240,0.6);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* BODY */
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-body::-webkit-scrollbar { width: 3px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+
+    /* ROWS */
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 9px;
+      animation: slideUp 0.22s ease both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .avatar.bot {
+      background: linear-gradient(135deg, #2874f0, #1a5cd4);
+      box-shadow: 0 0 14px rgba(40,116,240,0.35);
+    }
+
+    .avatar.bot svg { width: 16px; height: 16px; fill: white; }
+
+    .avatar.user {
+      background: #22273d;
+      color: var(--text-dim);
+    }
+
+    .avatar.user svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .bwrap {
+      display: flex;
+      flex-direction: column;
+      max-width: 70%;
+      gap: 4px;
+    }
+
+    .msg-row.user .bwrap { align-items: flex-end; }
+
+    .bubble {
+      padding: 11px 15px;
+      border-radius: 15px;
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    .bubble.bot {
+      background: var(--bot-bubble);
+      border: 1px solid var(--bot-bubble-border);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+
+    .bubble.user {
+      background: linear-gradient(135deg, #2874f0, #1f65d8);
+      border-bottom-right-radius: 4px;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(40,116,240,0.3);
+    }
+
+    .bubble strong { font-weight: 700; }
+
+    .ts {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      padding: 0 3px;
+      letter-spacing: 0.2px;
+    }
+
+    /* TYPING */
+    .typing { display: flex; align-items: center; gap: 5px; padding: 2px 0; }
+    .typing span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      animation: typeBounce 1.3s ease-in-out infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes typeBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* FOOTER */
+    .chat-footer {
+      padding: 12px 20px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px;
+      padding: 5px 5px 5px 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: rgba(40,116,240,0.55);
+      box-shadow: 0 0 0 3px rgba(40,116,240,0.1);
+    }
+
+    .chat-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      padding: 9px 0;
+    }
+
+    .chat-input::placeholder { color: var(--text-dim); }
+
+    .send-btn {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #2874f0, #1a5cd4);
+      color: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.18s ease;
+      box-shadow: 0 4px 14px rgba(40,116,240,0.35);
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(40,116,240,0.45);
+    }
+
+    .send-btn:active { transform: translateY(0); }
+
+    .send-btn svg { width: 17px; height: 17px; stroke: white; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .page { padding: 0; align-items: stretch; }
+      .chat-card {
+        height: 100dvh;
+        max-height: none;
+        min-height: none;
+        border-radius: 0;
+        border: none;
+      }
+    }
+  </style>
 </head>
-
 <body>
-  <div class="app-shell">
-    <div class="chat-card">
-      <!-- Header -->
-      <div class="chat-header">
-        <div class="brand">
-          <div class="brand-avatar">
-            <img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" alt="Flipkart"/>
-            <span class="status-dot" title="Online"></span>
-          </div>
-          <div class="brand-meta">
-            <div class="brand-title">Flipkart Chatbot</div>
-            <div class="brand-subtitle">Ask for product suggestions, comparisons, and specs</div>
-          </div>
-        </div>
-        <button class="btn btn-sm btn-outline-light clear-btn" id="clearChat" type="button">
-          <i class="fas fa-trash"></i> Clear
-        </button>
-      </div>
+<div class="page">
+  <div class="chat-card">
 
-      <!-- Body -->
-      <div class="chat-body" id="chatBody">
-        <div class="msg-row bot">
-          <div class="bubble bot-bubble">
-            👋 Hi! Tell me what you’re looking for (category + budget + any preference).
-            <div class="bubble-meta">Flipkart Bot</div>
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="logo-wrap">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <div class="header-text">
+          <h1>Flipkart <em>AI</em></h1>
+          <div class="header-sub">
+            <div class="online-dot"></div>
+            <p>Online · Smart Shopping Assistant</p>
           </div>
         </div>
       </div>
+      <button class="clear-btn" id="clearBtn" title="Clear chat">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
 
-      <!-- Footer -->
-      <div class="chat-footer">
-        <form id="messageArea" class="chat-form">
-          <input
-            type="text"
-            id="text"
-            name="msg"
-            placeholder="Type your message… (e.g., 'gaming headphones under 5k')"
-            autocomplete="off"
-            class="chat-input"
-            required
-          />
-          <button type="submit" class="chat-send" id="sendBtn" aria-label="Send">
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </form>
-        <div class="footer-hint">
-          Press <kbd>Enter</kbd> to send • Shift+Enter for newline (optional)
+    <!-- Chips -->
+    <div class="chips-bar" id="chipsBar">
+      <button class="chip">🎧 Headphones under ₹5000</button>
+      <button class="chip">📱 Phones under ₹15000</button>
+      <button class="chip">💻 Laptops for students</button>
+      <button class="chip">⌚ Smartwatches under ₹3000</button>
+      <button class="chip">📷 Budget cameras</button>
+      <button class="chip">🖥️ Monitors under ₹10000</button>
+    </div>
+
+    <!-- Body -->
+    <div class="chat-body" id="chatBody">
+      <div class="msg-row bot">
+        <div class="avatar bot">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg>
+        </div>
+        <div class="bwrap">
+          <div class="bubble bot">
+            👋 Hey! I'm your Flipkart shopping assistant.<br><br>
+            Tell me what you're looking for and I'll find you the best options. Try:<br><br>
+            <strong>"Suggest gaming headphones under ₹5000"</strong>
+          </div>
+          <div class="ts">Flipkart AI · just now</div>
         </div>
       </div>
     </div>
+
+    <!-- Footer -->
+    <div class="chat-footer">
+      <div class="input-wrap">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Ask me about any product..." autocomplete="off" />
+        <button class="send-btn" id="sendBtn">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
   </div>
+</div>
 
-  <!-- JS -->
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+  const body      = document.getElementById('chatBody');
+  const input     = document.getElementById('chatInput');
+  const sendBtn   = document.getElementById('sendBtn');
+  const clearBtn  = document.getElementById('clearBtn');
+  const chipsBar  = document.getElementById('chipsBar');
 
-  <script>
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
+  const botSVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg>`;
+  const userSVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
-    function formatBotText(text) {
-      // Lightweight formatting:
-      // - Convert **bold** to <strong>
-      // - New lines to <br>
-      let t = String(text || "");
-      t = escapeHtml(t);
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
-      // bold **text**
-      t = t.replaceAll(/\\*\\*(.+?)\\*\\*/g, "<strong>$1</strong>");
+  function fmt(t) {
+    return esc(t||'').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  }
 
-      // bullet-ish lines
-      t = t.replaceAll(/\\n/g, "<br>");
-      return t;
-    }
+  function ts() {
+    return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  }
 
-    function scrollToBottom() {
-      const el = document.getElementById("chatBody");
-      el.scrollTop = el.scrollHeight;
-    }
+  function scroll() { body.scrollTop = body.scrollHeight; }
 
-    function addUserMessage(rawText) {
-      const safe = escapeHtml(rawText);
-      const html = `
-        <div class="msg-row user">
-          <div class="bubble user-bubble">
-            ${safe}
-            <div class="bubble-meta">You</div>
-          </div>
+  function addUser(text) {
+    body.insertAdjacentHTML('beforeend', `
+      <div class="msg-row user">
+        <div class="avatar user">${userSVG}</div>
+        <div class="bwrap">
+          <div class="bubble user">${esc(text)}</div>
+          <div class="ts">You · ${ts()}</div>
         </div>
-      `;
-      $("#chatBody").append(html);
-      scrollToBottom();
-    }
+      </div>`);
+    scroll();
+  }
 
-    function addTyping() {
-      const html = `
-        <div class="msg-row bot" id="typingRow">
-          <div class="bubble bot-bubble">
-            <span class="typing">
-              <span></span><span></span><span></span>
-            </span>
-            <div class="bubble-meta">Flipkart Bot</div>
-          </div>
+  function addTyping() {
+    body.insertAdjacentHTML('beforeend', `
+      <div class="msg-row bot" id="typingRow">
+        <div class="avatar bot">${botSVG}</div>
+        <div class="bwrap">
+          <div class="bubble bot"><div class="typing"><span></span><span></span><span></span></div></div>
         </div>
-      `;
-      $("#chatBody").append(html);
-      scrollToBottom();
-    }
+      </div>`);
+    scroll();
+  }
 
-    function removeTyping() {
-      $("#typingRow").remove();
-    }
+  function removeTyping() { document.getElementById('typingRow')?.remove(); }
 
-    function addBotMessage(text) {
-      const html = `
-        <div class="msg-row bot">
-          <div class="bubble bot-bubble">
-            ${formatBotText(text)}
-            <div class="bubble-meta">Flipkart Bot</div>
-          </div>
+  function addBot(text) {
+    body.insertAdjacentHTML('beforeend', `
+      <div class="msg-row bot">
+        <div class="avatar bot">${botSVG}</div>
+        <div class="bwrap">
+          <div class="bubble bot">${fmt(text)}</div>
+          <div class="ts">Flipkart AI · ${ts()}</div>
         </div>
-      `;
-      $("#chatBody").append(html);
-      scrollToBottom();
+      </div>`);
+    scroll();
+  }
+
+  async function send(text) {
+    if (!text.trim()) return;
+    addUser(text);
+    input.value = '';
+    input.focus();
+    addTyping();
+    try {
+      const res  = await fetch('/get', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'msg='+encodeURIComponent(text) });
+      const data = await res.text();
+      removeTyping();
+      addBot(data);
+    } catch {
+      removeTyping();
+      addBot('⚠️ Server error. Please check Flask logs.');
     }
+  }
 
-    $(document).ready(function () {
-      $("#clearChat").on("click", function() {
-        $("#chatBody").html(`
-          <div class="msg-row bot">
-            <div class="bubble bot-bubble">
-              👋 Hi! Tell me what you’re looking for (category + budget + any preference).
-              <div class="bubble-meta">Flipkart Bot</div>
-            </div>
-          </div>
-        `);
-      });
+  sendBtn.addEventListener('click', () => send(input.value));
+  input.addEventListener('keydown', e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); } });
 
-      $("#messageArea").on("submit", function (event) {
-        event.preventDefault();
+  chipsBar.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => send(c.textContent.trim()));
+  });
 
-        const rawText = $("#text").val().trim();
-        if (!rawText) return;
-
-        addUserMessage(rawText);
-        $("#text").val("");
-        $("#text").focus();
-
-        addTyping();
-
-        $.ajax({
-          data: { msg: rawText },
-          type: "POST",
-          url: "/get",
-        })
-        .done(function (data) {
-          removeTyping();
-          addBotMessage(data);
-        })
-        .fail(function (xhr) {
-          removeTyping();
-          addBotMessage("⚠️ Server error. Check your Flask terminal logs.");
-        });
-      });
-    });
-  </script>
+  clearBtn.addEventListener('click', () => {
+    body.innerHTML = `
+      <div class="msg-row bot">
+        <div class="avatar bot">${botSVG}</div>
+        <div class="bwrap">
+          <div class="bubble bot">Chat cleared! What are you shopping for?</div>
+          <div class="ts">Flipkart AI · ${ts()}</div>
+        </div>
+      </div>`;
+  });
+</script>
 </body>
 </html>

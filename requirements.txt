@@ -10,5 +10,9 @@ pypdf
 python-dotenv
 pandas
 flask
+<<<<<<< HEAD
 prometheus-client
 
+=======
+prometheus-client
+>>>>>>> 54e126bcfd66e0afd5f683d22b92de310fa26d49
